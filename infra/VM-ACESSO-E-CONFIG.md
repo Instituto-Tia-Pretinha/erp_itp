@@ -28,7 +28,15 @@ Pacotes (EPEL `ol9_developer_EPEL`): `xrdp`, `xorgxrdp`, **`xrdp-selinux`**.
 
 **Sessão presa / "Could not acquire name on session bus":** há duas sessões do mesmo usuário. Listar com `ps -u itpadmin -o pid,args | grep -E "Xorg :|mate-session"` e encerrar a sobrando. Sair sempre por **Sistema → Sair**; fechar a janela deixa a sessão suspensa.
 
-## 3. ClickHouse — logs internos reduzidos (PRB-0028)
+## 3. Compose de produção (fonte única)
+
+`~/itp-stack/docker-compose.yml` é **symlink** para `~/erp_itp/infra/docker-compose.yml` (desde 2026-10-16). Antes era uma cópia solta na VM, editada à mão, que divergiu do repo (porta 8123 do ClickHouse voltou a abrir em `0.0.0.0`; serviço `aprxm_presidencia` e montagem de logs do ClickHouse só existiam na VM).
+
+- Mudança no compose: editar no repo, PR, merge. O cron de deploy faz o `git merge` em `~/erp_itp`, mas só recria `erp_itp_backend`/`erp_itp_frontend`; para os demais serviços, rodar `docker compose up -d <serviço>` em `~/itp-stack`.
+- `name: itp-stack` no topo do arquivo é obrigatório: sem ele o projeto viraria `infra` e o Compose criaria volumes novos e vazios.
+- `.env`, `*.env`, `clickhouse-config/` e `monitoring/` continuam em `~/itp-stack` (não versionados ou versionados à parte).
+
+## 4. ClickHouse — logs internos reduzidos (PRB-0028)
 
 Arquivo [`clickhouse/logs-reduzidos.xml`](clickhouse/logs-reduzidos.xml), montado no `~/itp-stack/docker-compose.yml`:
 
@@ -41,20 +49,20 @@ Arquivo [`clickhouse/logs-reduzidos.xml`](clickhouse/logs-reduzidos.xml), montad
 - Depois de aplicar: `TRUNCATE TABLE system.<tabela>` em cada log desligado (3,6 GB → 11,5 MB); memória do processo ~550 MB.
 - Backup do compose anterior: `docker-compose.yml.bak-antes-logs-clickhouse-*`.
 
-## 4. Monitoramento
+## 5. Monitoramento
 
 - Regras do Grafana: `infra/monitoring/grafana/provisioning/alerting/rules.yaml` (a pasta `~/itp-stack/monitoring/grafana/provisioning/alerting` é symlink para cá). **Editar aqui e commitar**, nunca direto na VM.
 - Memória: alerta de `available` < 10% (crítico) e de swap > 50% por 15 min (aviso). `buff/cache` alto é cache de disco e não indica problema.
 
-## 5. E-mail do APRXM
+## 6. E-mail do APRXM
 
 `~/itp-stack/aprxm_backend.env`: `MS_TENANT_ID`, `MS_CLIENT_ID`, `MS_CLIENT_SECRET` (app com `Mail.Send`) e `MAIL_SENDER=nao-responda@institutotiapretinha.org` (caixa compartilhada, sem licença e sem membros). Backup do env anterior: `aprxm_backend.env.bak-email-*`.
 
-## 6. Kernel / memória
+## 7. Kernel / memória
 
 `vm.swappiness=10` em `/etc/sysctl.d/99-swappiness.conf` (2026-10-16; padrão era 60). Aplicar sem reboot: `sudo sysctl -p /etc/sysctl.d/99-swappiness.conf`.
 
-## 7. Deploy do erp_itp
+## 8. Deploy do erp_itp
 
 O erp_itp não tem deploy por CI: as imagens são construídas na VM a partir de `~/erp_itp` (compose em `~/itp-stack`). Até 28/09/2026 isso era manual e a produção ficou 17 dias sem deploy.
 

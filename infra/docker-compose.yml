@@ -1,3 +1,11 @@
+# Fonte única do compose de produção: na VM, ~/itp-stack/docker-compose.yml é
+# symlink para este arquivo (~/erp_itp/infra/docker-compose.yml). Editar aqui e
+# commitar, nunca direto na VM. Caminhos relativos (./clickhouse-config, ./monitoring,
+# *.env) resolvem em ~/itp-stack, onde fica o symlink (conferir com `docker compose config`).
+# `name` fixo: sem ele o projeto passaria a se chamar "infra" e o Compose criaria
+# volumes novos e vazios (pg_data etc.) em vez de usar os itp-stack_*.
+name: itp-stack
+
 services:
   traefik:
     image: traefik:v3.5
@@ -62,6 +70,7 @@ services:
     volumes:
       - clickhouse_data:/var/lib/clickhouse
       - ./clickhouse-config/backups.xml:/etc/clickhouse-server/config.d/backups.xml:ro
+      - ./clickhouse-config/logs-reduzidos.xml:/etc/clickhouse-server/config.d/logs-reduzidos.xml:ro
       - /home/itpadmin/backups:/backups
     # 1g -> 1.5g (2026-09-17): container batia no teto so com overhead
     # interno do ClickHouse (mark cache/uncompressed cache), mesmo com
@@ -69,6 +78,10 @@ services:
     # falhava com MEMORY_LIMIT_EXCEEDED. Achado testando a conexao do BI.
     mem_limit: 1.5g
     cpus: "1.0"
+    networks:
+      default:
+        aliases:
+          - clickhouse-bi
 
   erp_itp_backend:
     build:
@@ -109,6 +122,21 @@ services:
       - "traefik.http.routers.erpitp-frontend.entrypoints=websecure"
       - "traefik.http.routers.erpitp-frontend.tls.certresolver=leresolver"
       - "traefik.http.services.erpitp-frontend.loadbalancer.server.port=3000"
+
+  aprxm_presidencia:
+    build:
+      context: /home/itpadmin/aprxm_sys
+      dockerfile: presidencia/Dockerfile
+    container_name: aprxm_presidencia
+    restart: unless-stopped
+    depends_on:
+      - aprxm_backend
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.aprxm-presidencia.rule=Host(`aprxm.institutotiapretinha.org`)"
+      - "traefik.http.routers.aprxm-presidencia.entrypoints=websecure"
+      - "traefik.http.routers.aprxm-presidencia.tls.certresolver=leresolver"
+      - "traefik.http.services.aprxm-presidencia.loadbalancer.server.port=80"
 
   aprxm_backend:
     build:

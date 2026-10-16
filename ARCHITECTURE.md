@@ -64,7 +64,7 @@ livres dentro do já alocado em 2026-10-16).
 | Dados | `pg_dump` do Postgres → restaura no Neon (banco original, agora só alvo de backup) | 6h | `~/pg-sync-to-neon.sh` |
 | Máquina | Snapshot incremental do disco Azure | Diário (3h) | `~/vm-snapshot.sh`, via managed identity da VM |
 
-**Deploy**: automático — cron a cada 15 min roda `infra/deploy/deploy-erp-itp.sh`, que só age quando a `main` muda (backup do banco, build, health check e rollback automático). Detalhes em `infra/VM-ACESSO-E-CONFIG.md` §7. `~/erp_itp/deploy.sh` é o script manual antigo (builda **toda** a stack, sem backup nem rollback) — preferir rodar o `deploy-erp-itp.sh` quando precisar forçar.
+**Deploy**: automático — cron a cada 15 min roda `infra/deploy/deploy-erp-itp.sh`, que só age quando a `main` muda (backup do banco, build, health check e rollback automático). Detalhes em `infra/VM-ACESSO-E-CONFIG.md` §8. `~/erp_itp/deploy.sh` é o script manual antigo (builda **toda** a stack, sem backup nem rollback) — preferir rodar o `deploy-erp-itp.sh` quando precisar forçar.
 
 **Removidos**: Metabase (`itp_metabase`, `metabase.itp.institutotiapretinha.org`) desligado em 2026-10-16 — sem uso; container, volume, imagem, rota do Traefik e registro DNS apagados.
 
