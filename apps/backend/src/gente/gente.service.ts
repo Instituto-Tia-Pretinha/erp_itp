@@ -993,7 +993,18 @@ export class GenteService {
     await this.reciboRepo.update(id, dto);
     return this.reciboRepo.findOneBy({ id });
   }
-  async deletarRecibo(id: string) { await this.reciboRepo.delete(id); return { ok: true }; }
+  async deletarRecibo(id: string) {
+    const recibo = await this.reciboRepo.findOneBy({ id });
+    // A Saída de salário gerada pela folha precisa sair junto: sem isso ela ficava
+    // Pendente e órfã, e regerar a folha criava outra — salário duplicado no financeiro.
+    // Se já foi paga, mantém: o dinheiro saiu de fato.
+    if (recibo?.movimentacao_id) {
+      const mov = await this.movimentacaoRepo.findOneBy({ id: recibo.movimentacao_id });
+      if (mov && mov.status !== 'Pago') await this.movimentacaoRepo.softDelete(mov.id);
+    }
+    await this.reciboRepo.delete(id);
+    return { ok: true };
+  }
 
   // ── Vales ─────────────────────────────────────────────────────────────────
 
