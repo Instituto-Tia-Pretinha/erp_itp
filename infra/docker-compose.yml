@@ -11,6 +11,7 @@ services:
     image: traefik:v3.5
     container_name: itp_traefik
     restart: unless-stopped
+    mem_limit: 256m
     command:
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
@@ -88,6 +89,7 @@ services:
       context: /home/itpadmin/erp_itp/apps/backend
     container_name: erp_itp_backend
     restart: unless-stopped
+    mem_limit: 1g
     env_file:
       - erp_itp_backend.env
     depends_on:
@@ -110,6 +112,7 @@ services:
         NEXT_PUBLIC_CHAMADA_TOKEN: itp-chamada-2026
     container_name: erp_itp_frontend
     restart: unless-stopped
+    mem_limit: 1g
     env_file:
       - erp_itp_frontend.env
     depends_on:
@@ -129,6 +132,7 @@ services:
       dockerfile: presidencia/Dockerfile
     container_name: aprxm_presidencia
     restart: unless-stopped
+    mem_limit: 128m
     depends_on:
       - aprxm_backend
     labels:
@@ -159,6 +163,7 @@ services:
     image: dpage/pgadmin4:latest
     container_name: itp_pgadmin
     restart: unless-stopped
+    mem_limit: 512m
     environment:
       PGADMIN_DEFAULT_EMAIL: admin@institutotiapretinha.org
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
@@ -174,6 +179,7 @@ services:
       context: /home/itpadmin/erp_itp/catalogo-erros-viewer/backend
     container_name: catalogo_backend
     restart: unless-stopped
+    mem_limit: 1g
     env_file:
       - /home/itpadmin/itp-stack/catalogo_erros.env
     volumes:
@@ -193,6 +199,7 @@ services:
         BACKEND_INTERNAL_URL: http://catalogo_backend:8000
     container_name: catalogo_frontend
     restart: unless-stopped
+    mem_limit: 512m
     environment:
       BACKEND_INTERNAL_URL: http://catalogo_backend:8000
       MS_TENANT_ID: ${MS_TENANT_ID}
@@ -210,6 +217,7 @@ services:
     image: prom/node-exporter:latest
     container_name: itp_node_exporter
     restart: unless-stopped
+    mem_limit: 128m
     command:
       - '--path.rootfs=/host'
       - '--collector.textfile.directory=/textfile-metrics'
@@ -223,6 +231,15 @@ services:
     image: gcr.io/cadvisor/cadvisor:latest
     container_name: itp_cadvisor
     restart: unless-stopped
+    mem_limit: 512m
+    # Só containers Docker, coleta a cada 30s e sem as métricas que nenhum painel/alerta
+    # usa (painéis usam só cpu, memória, rede, last_seen e start_time). Era o container
+    # mais caro da VM: ~18% de CPU e 73 GB enviados ao Prometheus (2026-10-16).
+    command:
+      - '--docker_only=true'
+      - '--housekeeping_interval=30s'
+      - '--store_container_labels=false'
+      - '--disable_metrics=percpu,sched,tcp,udp,advtcp,referenced_memory,hugetlb,cpu_topology,resctrl,memory_numa,disk,process'
     privileged: true
     volumes:
       - /:/rootfs:ro
@@ -237,6 +254,7 @@ services:
     image: prometheuscommunity/postgres-exporter:latest
     container_name: itp_postgres_exporter
     restart: unless-stopped
+    mem_limit: 128m
     environment:
       DATA_SOURCE_NAME: "postgresql://itp_admin:${POSTGRES_PASSWORD}@postgres:5432/erp_itp_db?sslmode=disable"
     depends_on:
@@ -248,6 +266,7 @@ services:
     image: prom/blackbox-exporter:latest
     container_name: itp_blackbox_exporter
     restart: unless-stopped
+    mem_limit: 128m
     volumes:
       - ./monitoring/prometheus/blackbox.yml:/etc/blackbox_exporter/config.yml
     ports:
@@ -257,6 +276,7 @@ services:
     image: prom/prometheus:latest
     container_name: itp_prometheus
     restart: unless-stopped
+    mem_limit: 2g
     volumes:
       - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
       - prometheus_data:/prometheus
@@ -270,6 +290,7 @@ services:
     image: grafana/grafana:latest
     container_name: itp_grafana
     restart: unless-stopped
+    mem_limit: 1g
     environment:
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
       GF_USERS_ALLOW_SIGN_UP: "false"
@@ -289,7 +310,6 @@ services:
       GF_RENDERING_SERVER_URL: http://grafana_renderer:8081/render
       GF_RENDERING_CALLBACK_URL: http://grafana:3000/
       GF_RENDERING_RENDERER_TOKEN: ${GRAFANA_RENDERER_TOKEN}
-      GF_LOG_FILTERS: rendering:debug
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:3000/api/health || exit 1"]
       interval: 10s
@@ -317,6 +337,7 @@ services:
     image: grafana/grafana-image-renderer:latest
     container_name: itp_grafana_renderer
     restart: unless-stopped
+    mem_limit: 1g
     environment:
       ENABLE_METRICS: "false"
       AUTH_TOKEN: ${GRAFANA_RENDERER_TOKEN}
