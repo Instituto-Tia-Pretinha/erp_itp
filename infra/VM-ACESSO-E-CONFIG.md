@@ -50,7 +50,11 @@ Arquivo [`clickhouse/logs-reduzidos.xml`](clickhouse/logs-reduzidos.xml), montad
 
 `~/itp-stack/aprxm_backend.env`: `MS_TENANT_ID`, `MS_CLIENT_ID`, `MS_CLIENT_SECRET` (app com `Mail.Send`) e `MAIL_SENDER=nao-responda@institutotiapretinha.org` (caixa compartilhada, sem licença e sem membros). Backup do env anterior: `aprxm_backend.env.bak-email-*`.
 
-## 6. Deploy do erp_itp
+## 6. Kernel / memória
+
+`vm.swappiness=10` em `/etc/sysctl.d/99-swappiness.conf` (2026-10-16; padrão era 60). Aplicar sem reboot: `sudo sysctl -p /etc/sysctl.d/99-swappiness.conf`.
+
+## 7. Deploy do erp_itp
 
 O erp_itp não tem deploy por CI: as imagens são construídas na VM a partir de `~/erp_itp` (compose em `~/itp-stack`). Até 28/09/2026 isso era manual e a produção ficou 17 dias sem deploy.
 

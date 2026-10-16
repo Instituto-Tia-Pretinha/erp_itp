@@ -2,7 +2,7 @@
 
 > Detalhe técnico completo: infraestrutura, módulos, dependências, dívidas
 > conhecidas. Para regras de trabalho/comandos, ver `CLAUDE.md`.
-> Última atualização: 2026-09-09.
+> Última atualização: 2026-10-16.
 
 ---
 
@@ -42,18 +42,21 @@ teriam como avisar ninguém. Ver seção 9 pro detalhamento completo e
 pendências (instrumentação de métricas de aplicação/API, RUM de
 frontend).
 
-**Swap**: 1GB via `/swapfile` (`/etc/fstab`), criado 2026-09-11 — a VM não
-tinha swap nenhum antes. RAM de 7.3Gi normalmente saudável (memória
-"available" reclamável via cache confirmada real, não falso positivo),
-mas sem swap um pico de memória anônima aciona o OOM killer sem margem.
+**Memória e swap**: VM com 15 GiB de RAM (eram 7,3 GiB até a ampliação).
+Swap de 1GB via `/swapfile` (`/etc/fstab`), criado 2026-09-11 — a VM não
+tinha swap nenhum antes; sem swap um pico de memória anônima aciona o OOM
+killer sem margem. `vm.swappiness=10` (`/etc/sysctl.d/99-swappiness.conf`,
+2026-10-16): o kernel só recorre ao swap sob pressão real. Swap "usado" com
+`si`/`so` zerados no `vmstat` são páginas frias de um pico antigo, não
+problema (alerta do Grafana: swap > 50% por 15 min).
 Outros achados de infra da mesma auditoria (VM Oracle Linux 9,
 `vm-itp-prod`), já corrigidos 2026-09-11: `/tmp` isolado via tmpfs
 (`nosuid,nodev,noexec`, backed por RAM/swap — antes era só um diretório
 dentro de `/`); `installonly_limit` duplicado em `/etc/yum.conf`/`/etc/dnf/dnf.conf`
 (mesmo arquivo via symlink, =3 e =2) limpo pra valor único. Ainda em
 aberto: VG `rootvg` 100% alocado (`VFree=0`) — não dá pra separar
-`/var/log` do root sem expandir disco primeiro (não urgente, `/` tem 28G
-livres dentro do já alocado).
+`/var/log` do root sem expandir disco primeiro (não urgente, `/` tem ~75G
+livres dentro do já alocado em 2026-10-16).
 
 **Backup em 2 camadas** (cron na própria VM, sem depender de serviço externo pago):
 | Camada | O quê | Frequência | Onde |
@@ -61,7 +64,9 @@ livres dentro do já alocado).
 | Dados | `pg_dump` do Postgres → restaura no Neon (banco original, agora só alvo de backup) | 6h | `~/pg-sync-to-neon.sh` |
 | Máquina | Snapshot incremental do disco Azure | Diário (3h) | `~/vm-snapshot.sh`, via managed identity da VM |
 
-**Deploy**: `~/erp_itp/deploy.sh` na VM — `git pull` + `docker compose build/up` + limpeza de cache >24h.
+**Deploy**: automático — cron a cada 15 min roda `infra/deploy/deploy-erp-itp.sh`, que só age quando a `main` muda (backup do banco, build, health check e rollback automático). Detalhes em `infra/VM-ACESSO-E-CONFIG.md` §7. `~/erp_itp/deploy.sh` é o script manual antigo (builda **toda** a stack, sem backup nem rollback) — preferir rodar o `deploy-erp-itp.sh` quando precisar forçar.
+
+**Removidos**: Metabase (`itp_metabase`, `metabase.itp.institutotiapretinha.org`) desligado em 2026-10-16 — sem uso; container, volume, imagem, rota do Traefik e registro DNS apagados.
 
 ---
 
