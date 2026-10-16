@@ -25,7 +25,7 @@ Internet → Traefik (SSL Let's Encrypt, roteamento por domínio)
              ├─ itp.institutotiapretinha.org       → erp_itp_frontend (Next.js, :3000)
              └─ api.itp.institutotiapretinha.org   → erp_itp_backend  (NestJS, :3001)
 Postgres (itp_postgres, :5432) — só rede interna Docker
-pgAdmin4 (:5050) — só localhost da VM (acesso via X2Go/MATE)
+Acesso ao banco: DBeaver via túnel SSH (`ssh -L 5432:127.0.0.1:5432 vm-itp-prod`)
 Grafana (:3030) + Prometheus (:9091) — só localhost da VM, ver seção 9
 ```
 
@@ -33,7 +33,7 @@ Grafana (:3030) + Prometheus (:9091) — só localhost da VM, ver seção 9
 (CPU/RAM/disco/rede da VM), `cAdvisor` (métricas por container),
 `postgres-exporter` (Postgres), `blackbox-exporter` (uptime/SSL dos 3
 domínios públicos via HTTP probe). Todos restritos a `127.0.0.1`, mesmo
-padrão de segurança do pgAdmin. Dashboards prontos da comunidade
+padrão de segurança do Postgres. Dashboards prontos da comunidade
 (Node Exporter Full, cAdvisor, PostgreSQL) provisionados automaticamente
 via arquivo (`infra/monitoring/grafana/`). Heartbeat externo via
 healthchecks.io (cron `*/5min` fazendo ping) — cobre o caso da própria VM
@@ -66,7 +66,7 @@ livres dentro do já alocado em 2026-10-16).
 
 **Deploy**: automático — cron a cada 15 min roda `infra/deploy/deploy-erp-itp.sh`, que só age quando a `main` muda (backup do banco, build, health check e rollback automático). Detalhes em `infra/VM-ACESSO-E-CONFIG.md` §8. `~/erp_itp/deploy.sh` é o script manual antigo (builda **toda** a stack, sem backup nem rollback) — preferir rodar o `deploy-erp-itp.sh` quando precisar forçar.
 
-**Removidos**: Metabase (`itp_metabase`, `metabase.itp.institutotiapretinha.org`) desligado em 2026-10-16 — sem uso; container, volume, imagem, rota do Traefik e registro DNS apagados.
+**Removidos**: Metabase (`itp_metabase`, `metabase.itp.institutotiapretinha.org`) desligado em 2026-10-16 — sem uso; container, volume, imagem, rota do Traefik e registro DNS apagados. pgAdmin (`itp_pgadmin`) removido em 2026-10-16 — substituído pelo DBeaver via túnel SSH.
 
 ---
 
@@ -191,7 +191,7 @@ queda total da VM não gera alerta nenhum (o próprio painel caiu junto).
 O heartbeat externo é o único sinal que sobrevive a esse cenário.
 
 **Credenciais**: `GRAFANA_ADMIN_PASSWORD` no `.env` da VM (não versionado,
-mesmo padrão de `POSTGRES_PASSWORD`/`PGADMIN_DEFAULT_PASSWORD`).
+mesmo padrão de `POSTGRES_PASSWORD`).
 
 **Acesso público + SSO (2026-09-11)**: exposto em
 `https://grafana.itp.institutotiapretinha.org` via Traefik/Let's
