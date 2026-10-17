@@ -7,7 +7,7 @@ Plano para trocar `vm-itp-prod` por uma VM nova criada da imagem **oficial** da 
 | Item | Atual | Novo | Motivo |
 |---|---|---|---|
 | Imagem | `nuvemnestllc…:01-id-oracle-linux-93-gen-2` (plano pago) | `Oracle:Oracle-Linux:ol98-lvm-gen2:latest` (sem plano) | licença paga presa ao disco; não dá para trocar na VM atual |
-| Tamanho | `Standard_E2bs_v5` | `Standard_E2bs_v5` | não mudar duas coisas de uma vez; reavaliar com métricas depois |
+| Tamanho | `Standard_E2bs_v5` (2 vCPU, 16 GB) | **`Standard_B4as_v2` (4 vCPU, 16 GB)** | mesmo custo, dobro de núcleos; decisão em `AVALIACAO-SEPARACAO-ITP-APRXM.md` §8 |
 | Disco do SO | Premium SSD 128 GB | **Standard SSD** 128 GB | economia ~R$ 45/mês, sem janela extra |
 | Região / rede | eastus2, `vnet-eastus2-1` | mesma | cópia de dados pela rede privada |
 | IP público | `vm-itp-prod-ip` | **o mesmo IP, movido na virada** | sem mudar DNS; volta imediata |
@@ -66,6 +66,16 @@ Custo extra durante a migração: as duas VMs ligadas ao mesmo tempo (~R$ 20/dia
 - Extensão `LinuxDiagnostic`: não recriar (os alertas usam métricas da plataforma).
 
 ## 3. Fases
+
+### Fase 0 — Isolamento e credenciais (na VM atual, antes da migração)
+Obrigatório com ITP e APRXM na mesma VM (ver `AVALIACAO-SEPARACAO-ITP-APRXM.md` §6):
+1. Trocar as senhas do Postgres (`itp_admin`), do ClickHouse (`aprxm`) e do banco de analytics no Neon — expostas em 17/10. Janela curta à noite (cada sistema reinicia em segundos).
+2. Usuário de banco por sistema (`erp_itp_app`, `aprxm_app`), com acesso só ao próprio banco; `itp_admin` só para administração.
+3. Armazenamento: conta própria para o APRXM (ou SAS/RBAC por contêiner).
+4. App registration por sistema, com `Mail.Send` restrito à caixa de cada um.
+5. APRXM: imagens construídas no GitHub e só baixadas na VM; proteção da `main` do `aprxm_sys`.
+6. Remover `VERCEL_*`/`TURBO_*` do `aprxm_backend.env`.
+
 
 ### Fase 1 — Montagem (sem impacto)
 1. Criar a VM nova `vm-itp-prod-ol9` na mesma VNet/sub-rede, **sem IP público**, NIC com o NSG atual, disco Standard SSD 128 GB, identidade gerenciada ligada.
