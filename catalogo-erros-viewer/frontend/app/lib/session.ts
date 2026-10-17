@@ -13,7 +13,7 @@ export type Sessao = {
   exp: number;
 };
 
-function base64UrlDecode(s: string): Uint8Array {
+function base64UrlDecode(s: string): Uint8Array<ArrayBuffer> {
   const pad = s.length % 4 === 0 ? "" : "=".repeat(4 - (s.length % 4));
   const b64 = s.replace(/-/g, "+").replace(/_/g, "/") + pad;
   const bin = atob(b64);
