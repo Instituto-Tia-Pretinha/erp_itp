@@ -31,6 +31,7 @@ import staging_diario
 from claude_client import TarefaEscalada, classificar, registrar_escalonamento
 from graph_client import GraphClient
 import jev_client
+import manutencao
 import notificador
 from base_conhecimento import BaseConhecimento
 
@@ -177,6 +178,25 @@ def salvar_state(state: dict) -> None:
     os.makedirs(os.path.dirname(config.STATE_FILE), exist_ok=True)
     with open(config.STATE_FILE, "w", encoding="utf-8") as f:
         json.dump(state, f, indent=2)
+
+
+def separar_manutencao(janelas: list[dict], alvo: str, itens: list, quando_de, agora: datetime) -> list:
+    """Tira as ocorrências que caem numa janela de manutenção planejada (ver
+    manutencao.py) e as grava no registro de revisão; devolve as demais."""
+    if not janelas:
+        return itens
+    restantes, suprimidas = [], defaultdict(list)
+    for item in itens:
+        janela = manutencao.janela_da_ocorrencia(janelas, alvo, quando_de(item) or agora)
+        if janela:
+            suprimidas[id(janela)].append((janela, item))
+        else:
+            restantes.append(item)
+    for grupo in suprimidas.values():
+        janela = grupo[0][0]
+        manutencao.registrar_suprimidas(alvo, janela, [str(i) for _, i in grupo])
+        log(f"  {len(grupo)} ocorrência(s) em janela de manutenção ({janela.get('motivo', '')}) — sem item/alerta")
+    return restantes
 
 
 def logs_do_container(nome: str, desde_iso: str) -> str:
@@ -718,6 +738,7 @@ def main() -> None:
             log("aviso: --jev sem JEV_API_KEY no env — erros novos ficam pendentes de triagem")
     state = carregar_state()
     agora = parquet_writer.agora_utc()
+    janelas_manutencao = manutencao.carregar()
     custo_acumulado: list = []
     contador_classificacoes: list = []
     linhas_parquet: list[dict] = []
@@ -735,6 +756,7 @@ def main() -> None:
         texto_log = logs_do_container(nome, desde_iso)
         linhas_erro = extrair_erros(texto_log)
         log(f"  {len(linhas_erro)} linha(s) com padrão de erro")
+        linhas_erro = separar_manutencao(janelas_manutencao, nome, linhas_erro, normalizador.extrair_timestamp, agora)
 
         # Agrupa por assinatura normalizada dentro deste lote, guardando
         # também o timestamp real de cada ocorrência (quando a linha tiver).
@@ -832,6 +854,9 @@ def main() -> None:
         log(f"Lendo falhas da tarefa {task_id} desde {desde_iso}...")
         falhas = falhas_da_tarefa(task_id, tarefa_cfg.get("log_path"), desde_iso)
         log(f"  {len(falhas)} execucao(oes) com falha")
+        falhas = separar_manutencao(
+            janelas_manutencao, task_id, falhas, lambda f: datetime.fromisoformat(f["inicio"]), agora
+        )
 
         aplicacao_sugerida = "APRXM" if task_id.startswith("aprxm-") else "ITP"
         # Uma assinatura por tarefa (nao por execucao) -- falhas repetidas da
