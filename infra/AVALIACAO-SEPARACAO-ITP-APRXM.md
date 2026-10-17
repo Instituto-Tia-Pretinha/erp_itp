@@ -72,5 +72,22 @@ Crédito disponível: ~US$ 180/mês até 27/07/2027. **Todas as opções cabem.*
 5. **Proteção da `main` do `aprxm_sys`** (GitHub Team gratuito para ONGs) e revisão obrigatória antes de deploy.
 6. Remover as variáveis `VERCEL_*`/`TURBO_*` do APRXM.
 
-## 7. Recomendação
+## 7. Recomendação técnica (antes da decisão)
 **Opção B (duas VMs)**, feita junto com a migração para o Oracle Linux gratuito: custa ~US$ 5/mês a mais que a opção A, e é a única que tira o deploy do APRXM (código de um repositório com colaborador externo, executado com acesso de root via Docker) de dentro do servidor que guarda os dados das crianças do ITP. As correções da seção 6 entram nas duas VMs. O monitoramento e o catálogo de erros continuam centralizados na VM do ITP, acessando a do APRXM pela rede interna.
+
+## 8. Decisão (2026-10-17)
+
+**Uma VM só, com 16 GB de RAM** — requisito mínimo definido pela direção; duas VMs de 16 GB não cabem no crédito.
+
+| Opção de 16 GB (Linux, eastus2) | CPU | VM/mês | Total/mês* |
+|---|---|---|---|
+| `E2as_v5` | 2 vCPU dedicadas | US$ 82,49 | ~US$ 102 |
+| `E2bs_v5` (atual) | 2 vCPU dedicadas | US$ 108,77 | ~US$ 128 |
+| **`B4as_v2` — escolhida** | **4 vCPU sob demanda** | **US$ 109,50** | **~US$ 129** |
+| `D4as_v5` | 4 vCPU dedicadas | US$ 125,56 | ~US$ 145 |
+
+\* com Standard SSD 128 GB, IP, snapshots e DNS (~US$ 19). Teto do crédito: ~US$ 183/mês.
+
+- `B4as_v2`: mesmo custo da VM atual com o dobro de núcleos; o uso médio medido (8% de 2 núcleos) acumula crédito de CPU para os picos (builds, relatórios, ETL). Se o uso sustentado subir, trocar para `D4as_v5` (redimensionamento, ~5 min fora do ar).
+- Com a VM compartilhada, as correções da seção 6 passam a ser **obrigatórias** e entram antes da virada.
+- Runner do APRXM: as imagens passam a ser construídas no GitHub (runners hospedados) e a VM só baixa e executa; a `main` do `aprxm_sys` ganha proteção com revisão obrigatória.
