@@ -82,3 +82,19 @@ Cron (`crontab -e` do `itpadmin`):
 ```
 
 Migrations rodam no boot do backend (`runMigrations`); se o deploy for revertido depois de uma migration, o banco fica à frente do código — restaurar pelo backup se necessário. Deploy manual: rodar o mesmo script.
+
+## 9. Manutenção planejada — sempre abrir janela antes
+
+Qualquer ação que reinicia containers, troca senha ou provoca erro de propósito (teste de acesso negado) **gera incidente e alerta imediato** no catálogo de erros se não houver janela aberta (caso real: 17/10/2026, CAT-0980 a 0982 descartados).
+
+```bash
+python3 ~/erp_itp/infra/manutencao/manutencao.py iniciar 30 "troca de senha do Postgres" itp_postgres erp_itp_backend
+# ... manutenção ...
+python3 ~/erp_itp/infra/manutencao/manutencao.py encerrar
+python3 ~/erp_itp/infra/manutencao/manutencao.py status
+```
+
+- Sem alvos, a janela cobre todos os containers e tarefas.
+- Erros dentro da janela não viram item nem alerta; ficam em `~/itp-stack/manutencao-ocorrencias.log` — **revisar ao encerrar** (um erro real durante a manutenção também cai ali).
+- Containers informados ganham silence no alerta "container caído" do Grafana (`tarefas/silenciar_manutencao.sh`).
+- Em comandos de verificação, sempre informar o usuário do banco (`pg_isready -U itp_admin`): sem `-U`, o Postgres registra `role "root" does not exist`.
