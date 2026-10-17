@@ -58,6 +58,8 @@ aberto: VG `rootvg` 100% alocado (`VFree=0`) — não dá pra separar
 `/var/log` do root sem expandir disco primeiro (não urgente, `/` tem ~75G
 livres dentro do já alocado em 2026-10-16).
 
+**Custos e crédito de ONG**: ver `infra/CUSTOS-AZURE.md` (gasto mensal, crédito até 27/07/2027, renovação e plano de redução).
+
 **Backup em 2 camadas** (cron na própria VM, sem depender de serviço externo pago):
 | Camada | O quê | Frequência | Onde |
 |---|---|---|---|
