@@ -42,7 +42,7 @@ AUTOR = ("JiraIA", "erickcardoso@institutotiapretinha.org")
 # Sistema do ticket -> (repositório local, repositório no GitHub).
 REPOS = {
     "APRXM": (os.path.expanduser("~/aprxm_sys"), "erickcardosoitp/aprxm_sys"),
-    "ERP-ITP": (os.path.expanduser("~/erp_itp"), "erickcardosoitp/erp_itp"),
+    "ERP-ITP": (os.path.expanduser("~/erp_itp"), "Instituto-Tia-Pretinha/erp_itp"),
 }
 # Correção automática nunca toca nesses caminhos (schema, segredos, deploy, CI).
 PROIBIDOS = re.compile(r"migrat|/db/|^database/|\.env|docker-compose|^\.github/|app\.module\.ts$|vercel\.json$", re.I)
