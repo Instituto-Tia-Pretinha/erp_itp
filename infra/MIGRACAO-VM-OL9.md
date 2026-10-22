@@ -7,7 +7,7 @@ Plano para trocar `vm-itp-prod` por uma VM nova criada da imagem **oficial** da 
 | Item | Atual | Novo | Motivo |
 |---|---|---|---|
 | Imagem | `nuvemnestllc…:01-id-oracle-linux-93-gen-2` (plano pago) | `Oracle:Oracle-Linux:ol98-lvm-gen2:latest` (sem plano) | licença paga presa ao disco; não dá para trocar na VM atual |
-| Tamanho | `Standard_E2bs_v5` (2 vCPU, 16 GB) | **`Standard_B4as_v2` (4 vCPU, 16 GB)** | mesmo custo, dobro de núcleos; decisão em `AVALIACAO-SEPARACAO-ITP-APRXM.md` §8 |
+| Tamanho | `Standard_E2bs_v5` (2 vCPU, 16 GB) | **`Standard_D4as_v7` (4 vCPU dedicadas, 16 GB, disco NVMe)** | `B4as_v2` sem cota na assinatura (pedido recusado pela Microsoft em 07/09 e 21/10); ver `AVALIACAO-SEPARACAO-ITP-APRXM.md` §8 |
 | Disco do SO | Premium SSD 128 GB | **Standard SSD** 128 GB | economia ~R$ 45/mês, sem janela extra |
 | Região / rede | eastus2, `vnet-eastus2-1` | mesma | cópia de dados pela rede privada |
 | IP público | `vm-itp-prod-ip` | **o mesmo IP, movido na virada** | sem mudar DNS; volta imediata |
@@ -78,6 +78,8 @@ Obrigatório com ITP e APRXM na mesma VM (ver `AVALIACAO-SEPARACAO-ITP-APRXM.md`
 
 
 ### Fase 1 — Montagem (sem impacto)
+> 21/10/2026: VM criada (`172.16.0.5`, acesso `ssh -J vm-itp-prod itpadmin@172.16.0.5`). O LV raiz veio com 32 GB dos 128 GB do disco: estender no passo 3.
+
 1. Criar a VM nova `vm-itp-prod-ol9` na mesma VNet/sub-rede, **sem IP público**, NIC com o NSG atual, disco Standard SSD 128 GB, identidade gerenciada ligada.
 2. Acesso inicial: pela VM antiga, via IP privado (`ssh` de dentro da VNet).
 3. Instalar pacotes e configurar o sistema (seção 2). Tailscale **ainda não** autenticado.
