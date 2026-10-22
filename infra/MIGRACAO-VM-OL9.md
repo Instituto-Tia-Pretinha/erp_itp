@@ -78,7 +78,12 @@ Obrigatório com ITP e APRXM na mesma VM (ver `AVALIACAO-SEPARACAO-ITP-APRXM.md`
 
 
 ### Fase 1 — Montagem (sem impacto)
-> 21/10/2026: VM criada (`172.16.0.5`, acesso `ssh -J vm-itp-prod itpadmin@172.16.0.5`). O LV raiz veio com 32 GB dos 128 GB do disco: estender no passo 3.
+> **Concluída em 21/10/2026.** VM `172.16.0.5` (acesso `ssh -J vm-itp-prod itpadmin@172.16.0.5`). LV raiz estendido para 111 GB. Pacotes iguais aos da antiga, exceto Ksplice (vem da licença paga); Docker fixado em 28.5.2 (`dnf versionlock`). Arquivos copiados com `rsync`; crontab com as 22 linhas comentadas (`#MIGRACAO#`); `tarefas-api` instalado e desligado; papéis da identidade atribuídos; `vm-snapshot.sh` já aponta para o disco novo. Falta: senha do `itpadmin` para o RDP (`sudo passwd itpadmin`).
+>
+> Cuidados para a virada:
+> - O `itpadmin` da imagem nasce com uid 1000; a antiga usa 1001. Foi alinhado para 1001 (`usermod`). Sem isso, `rsync --numeric-ids` deixa o `~/.ssh` com outro dono e o SSH trava.
+> - Na cópia do delta de `~/itp-stack` (Fase 3), excluir `tarefas/vm-snapshot.sh` para não voltar o `DISK_ID` antigo.
+> - Chave temporária `~/.ssh/migracao_ol9` (antiga → nova): remover das duas VMs na Fase 4.
 
 1. Criar a VM nova `vm-itp-prod-ol9` na mesma VNet/sub-rede, **sem IP público**, NIC com o NSG atual, disco Standard SSD 128 GB, identidade gerenciada ligada.
 2. Acesso inicial: pela VM antiga, via IP privado (`ssh` de dentro da VNet).
