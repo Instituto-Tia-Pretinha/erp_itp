@@ -83,11 +83,13 @@ Crédito disponível: ~US$ 180/mês até 27/07/2027. **Todas as opções cabem.*
 |---|---|---|---|
 | `E2as_v5` | 2 vCPU dedicadas | US$ 82,49 | ~US$ 102 |
 | `E2bs_v5` (atual) | 2 vCPU dedicadas | US$ 108,77 | ~US$ 128 |
-| **`B4as_v2` — escolhida** | **4 vCPU sob demanda** | **US$ 109,50** | **~US$ 129** |
+| `B4as_v2` — escolhida em 17/10, sem cota | 4 vCPU sob demanda | US$ 109,50 | ~US$ 129 |
 | `D4as_v5` | 4 vCPU dedicadas | US$ 125,56 | ~US$ 145 |
+| **`D4as_v7` — adotada em 21/10** | **4 vCPU dedicadas** | **~US$ 133** | **~US$ 152** |
 
 \* com Standard SSD 128 GB, IP, snapshots e DNS (~US$ 19). Teto do crédito: ~US$ 183/mês.
 
 - `B4as_v2`: mesmo custo da VM atual com o dobro de núcleos; o uso médio medido (8% de 2 núcleos) acumula crédito de CPU para os picos (builds, relatórios, ETL). Se o uso sustentado subir, trocar para `D4as_v5` (redimensionamento, ~5 min fora do ar).
+- **Atualização 21/10:** a família BASv2 tem cota 0 na assinatura e a Microsoft recusou o aumento (07/09 e 21/10). A `B4ms` e a `D4as_v6` não são oferecidas à assinatura. Adotada a `D4as_v7`, a mais barata de 4 vCPU e 16 GB com cota livre; cabe no teto do crédito com ~US$ 31/mês de folga.
 - Com a VM compartilhada, as correções da seção 6 passam a ser **obrigatórias** e entram antes da virada.
 - Runner do APRXM: as imagens passam a ser construídas no GitHub (runners hospedados) e a VM só baixa e executa; a `main` do `aprxm_sys` ganha proteção com revisão obrigatória.
