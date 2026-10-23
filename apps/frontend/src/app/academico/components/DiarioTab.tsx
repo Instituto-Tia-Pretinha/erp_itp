@@ -5,6 +5,7 @@ import { Plus, Trash2, RefreshCw, FileText, BookOpen } from 'lucide-react';
 import api from '@/services/api';
 import { Turma, Aluno } from './_types';
 import { TIPOS_DIARIO, fmtDate, Modal, FieldInput, FieldSelect } from './_shared';
+import { escapeHtml } from '@/lib/utils';
 
 // ── Local interfaces ──────────────────────────────────────────────────────────
 interface DiarioEntry { id: string; tipo: string; titulo?: string; descricao?: string; aluno_id?: string; aluno_nome?: string; turma_id?: string; data: string; usuario_nome?: string; created_at: string; }
@@ -76,7 +77,7 @@ function DiarioDeClasseSubTab({ turmas }: { turmas: Turma[] }) {
     const html = printRef.current.outerHTML;
     const win = window.open('', '_blank', 'width=1200,height=800');
     if (!win) return;
-    win.document.write(`<!DOCTYPE html><html><head><title>Diário de Classe — ${dados?.turma.nome || ''}</title>
+    win.document.write(`<!DOCTYPE html><html><head><title>Diário de Classe — ${escapeHtml(dados?.turma.nome)}</title>
       <script src="https://cdn.tailwindcss.com"></script>
       <style>@page { size: A4 landscape; margin: 12mm } body { font-family: ui-sans-serif, system-ui, sans-serif }</style>
       </head><body class="p-6">${html}</body></html>`);

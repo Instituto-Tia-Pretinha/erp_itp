@@ -13,6 +13,7 @@ import {
 import api from '@/services/api';
 import { useAuth } from '@/context/auth-context';
 import { Turma, Aluno, PresencaSessao } from './_types';
+import { escapeHtml } from '@/lib/utils';
 
 // ─── Local interfaces ─────────────────────────────────────────────────────────
 
@@ -97,7 +98,7 @@ function DiarioDeClasseSubTab({ turmas }: { turmas: Turma[] }) {
     const html = printRef.current.outerHTML;
     const win = window.open('', '_blank', 'width=1200,height=800');
     if (!win) return;
-    win.document.write(`<!DOCTYPE html><html><head><title>Diário de Classe — ${dados?.turma.nome || ''}</title>
+    win.document.write(`<!DOCTYPE html><html><head><title>Diário de Classe — ${escapeHtml(dados?.turma.nome)}</title>
       <script src="https://cdn.tailwindcss.com"></script>
       <style>@page { size: A4 landscape; margin: 12mm } body { font-family: ui-sans-serif, system-ui, sans-serif }</style>
       </head><body class="p-6">${html}</body></html>`);

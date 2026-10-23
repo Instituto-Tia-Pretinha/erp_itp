@@ -130,13 +130,15 @@ def scan():
         if image is None:
             return jsonify({"error": "cancelled"}), 400
 
-        tmp = tempfile.mktemp(suffix=".jpg")
-        image.SaveFile(tmp)
-
-        with open(tmp, "rb") as f:
-            data = base64.b64encode(f.read()).decode()
-
-        os.unlink(tmp)
+        # Diretorio exclusivo em vez de mktemp (corrida no nome); o WIA exige que o arquivo nao exista.
+        tmp_dir = tempfile.mkdtemp(prefix="itp-scan-")
+        try:
+            tmp = os.path.join(tmp_dir, "digitalizado.jpg")
+            image.SaveFile(tmp)
+            with open(tmp, "rb") as f:
+                data = base64.b64encode(f.read()).decode()
+        finally:
+            shutil.rmtree(tmp_dir, ignore_errors=True)
 
         return jsonify({
             "ok": True,
@@ -150,7 +152,8 @@ def scan():
         # WIA error 0x80210015 = nenhum scanner disponível
         if "0x80210015" in msg or "No scanner" in msg.lower():
             return jsonify({"error": "Nenhum scanner encontrado. Verifique se está ligado e conectado."}), 503
-        return jsonify({"error": msg}), 500
+        print(f"Falha ao digitalizar: {msg}", file=sys.stderr)
+        return jsonify({"error": "Falha ao digitalizar. Tente novamente."}), 500
 
     finally:
         pythoncom.CoUninitialize()

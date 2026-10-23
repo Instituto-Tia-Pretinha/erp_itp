@@ -77,9 +77,14 @@ function LoginForm() {
       } else {
         const params = new URLSearchParams(window.location.search);
         const callbackUrl = params.get('callbackUrl');
-        const dest = (callbackUrl && callbackUrl.startsWith('/') && !callbackUrl.startsWith('/login'))
-          ? callbackUrl
-          : '/dashboard';
+        // "//outro.site" e "/\outro.site" começam com "/" mas saem do domínio: só aceita mesma origem.
+        let dest = '/dashboard';
+        if (callbackUrl?.startsWith('/')) {
+          const alvo = new URL(callbackUrl, window.location.origin);
+          if (alvo.origin === window.location.origin && !alvo.pathname.startsWith('/login')) {
+            dest = alvo.pathname + alvo.search + alvo.hash;
+          }
+        }
         setTimeout(() => { window.location.href = dest; }, 100);
       }
 
