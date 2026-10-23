@@ -116,6 +116,14 @@ Obrigatório com ITP e APRXM na mesma VM (ver `AVALIACAO-SEPARACAO-ITP-APRXM.md`
 7. Verificações: `itp.`, `api.itp.`, `aprxm.`, `api-aprxm.`, `grafana.itp.` respondendo com certificado válido; login no ERP; prestação de contas pública; `docker compose ls` = running(16); healthchecks.io recebendo ping; `ssh vm-itp-prod` (Tailscale) e RDP funcionando.
 8. Retomar o healthchecks.io. Desligar (deallocate) a VM antiga.
 
+> **Virada feita em 23/10/2026 (noite).** Produção na `vm-itp-prod-ol9`; `vm-itp-prod` desalocada (disco intacto, volta possível). Cópia dos volumes com a stack parada: 2,5 min. Tailscale com o mesmo nó e IP (`100.108.121.11`); runner do `aprxm_sys` registrado de novo (v2.338.1); crontab idêntico ao original; os 7 alertas de métrica apontam para a VM nova.
+>
+> O que deu diferente do plano:
+> - `/var/lib/tailscale` não existe na VM nova enquanto o tailscaled nunca rodou: criar a pasta (`mkdir -p`, `chmod 700`) antes de extrair o estado. Sem Tailscale nas duas, o acesso foi pelo `az vm run-command`.
+> - O deploy automático do ERP reconstruiu imagens na antiga depois da cópia: comparar os IDs das imagens `itp-stack-*` logo antes de subir na nova.
+> - Claude Code CLI (`/usr/local/lib/node_modules` + `/usr/local/bin/claude`) estava fora do inventário; copiado. O login OAuth dele já estava vencido na antiga desde 22/10 (investigador do JiraIA falhando): refazer `claude` login na VM.
+> - Alertas de métrica: `az monitor metrics alert update --set "scopes[0]=<id da VM nova>"`.
+
 ### Volta (se algo falhar na virada)
 Parar a stack na nova → devolver o IP público à NIC antiga → restaurar o tailscaled na antiga → ligar a VM antiga e `docker compose up -d` → descomentar o crontab. Os dados da antiga não foram alterados (stack só parada).
 
