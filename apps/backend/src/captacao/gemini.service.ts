@@ -640,13 +640,14 @@ export class GeminiService {
     if (value == null) return undefined;
     // Sem < e > nao sobra tag; esquemas e handlers sao removidos ate estabilizar,
     // senao "javajavascript:script:" vira "javascript:" numa passada so.
-    let s = String(value).replace(/<[^>]*>/g, '').replace(/[<>]/g, '');
+    let s = String(value);
     let anterior: string;
     do {
       anterior = s;
-      s = s.replace(/(?:java|vb)script:|data:/gi, '').replace(/on\w+\s*=/gi, '');
+      s = s.replace(/<[^>]*>/g, '').replace(/(?:java|vb)script:|data:/gi, '').replace(/on\w+\s*=/gi, '');
     } while (s !== anterior);
     s = s
+      .replace(/[<>]/g, '')
       .replace(/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/g, '') // control chars
       .slice(0, maxLen)
       .trim();
