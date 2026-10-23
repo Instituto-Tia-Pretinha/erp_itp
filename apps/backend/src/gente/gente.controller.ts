@@ -9,6 +9,14 @@ import { ModuloPermGuard } from '../auth/guards/modulo-perm.guard';
 import { ModuloPerm } from '../auth/decorators/modulo-perm.decorator';
 import { Public } from '../auth/decorators/public.decorator';
 
+// Query/body podem chegar como array (?mes_referencia=a&mes_referencia=b); o service espera 'YYYY-MM'.
+function mesReferencia(valor: unknown): string {
+  if (typeof valor !== 'string' || !/^\d{4}-(0[1-9]|1[0-2])$/.test(valor)) {
+    throw new BadRequestException('mes_referencia deve estar no formato AAAA-MM');
+  }
+  return valor;
+}
+
 @UseGuards(JwtAuthGuard, ModuloPermGuard)
 @Controller('gente')
 export class GenteController {
@@ -152,24 +160,24 @@ export class GenteController {
   @Post('folha/calcular')
   @ModuloPerm('gente', 'incluir')
   calcularFolha(@Body() body: any, @Request() req: any) {
-    return this.svc.calcularFolha(body.mes_referencia, req.user?.userId, req.user?.nome ?? 'sistema');
+    return this.svc.calcularFolha(mesReferencia(body.mes_referencia), req.user?.userId, req.user?.nome ?? 'sistema');
   }
 
   @Get('folha/preview')
   @ModuloPerm('gente', 'visualizar')
   previewFolha(@Query('colaborador_id') colaborador_id: string, @Query('mes_referencia') mes_referencia: string) {
-    return this.svc.previewFolhaColaborador(colaborador_id, mes_referencia);
+    return this.svc.previewFolhaColaborador(colaborador_id, mesReferencia(mes_referencia));
   }
 
   @Post('folha/calcular-um')
   @ModuloPerm('gente', 'incluir')
   calcularFolhaUm(@Body() body: any, @Request() req: any) {
-    return this.svc.calcularFolhaColaborador(body.colaborador_id, body.mes_referencia, req.user?.userId, req.user?.nome ?? 'sistema');
+    return this.svc.calcularFolhaColaborador(body.colaborador_id, mesReferencia(body.mes_referencia), req.user?.userId, req.user?.nome ?? 'sistema');
   }
 
   @Get('recibos')
   @ModuloPerm('gente', 'visualizar')
-  listarRecibos(@Query('colaborador_id') colaborador_id?: string, @Query('mes_referencia') mes_referencia?: string) { return this.svc.listarRecibos(colaborador_id, mes_referencia); }
+  listarRecibos(@Query('colaborador_id') colaborador_id?: string, @Query('mes_referencia') mes_referencia?: string) { return this.svc.listarRecibos(colaborador_id, mes_referencia === undefined ? undefined : mesReferencia(mes_referencia)); }
 
   @Get('recibos/:id/completo')
   @ModuloPerm('gente', 'visualizar')

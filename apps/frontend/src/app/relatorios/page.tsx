@@ -12,6 +12,7 @@ import {
   AlertCircle, Target, UserCheck, FileText, Clock, Printer,
 } from 'lucide-react';
 import api from '@/services/api';
+import { escapeHtml } from '@/lib/utils';
 
 /* ── Helpers ── */
 function moeda(v: number) {
@@ -682,12 +683,12 @@ function FrequenciaTurmaSection() {
   const imprimirLista = () => {
     const turma = turmas.find(t => t.id === turmaSel)?.nome ?? 'Todas as Turmas';
     const linhas = porAluno.map(a =>
-      `<tr><td>${a.aluno_nome || '—'}</td><td style="text-align:center">${a.presencas ?? 0}</td><td style="text-align:center">${a.faltas ?? 0}</td><td style="text-align:center">${a.total ?? 0}</td><td style="text-align:center">${a.total > 0 ? ((Number(a.presencas) / Number(a.total)) * 100).toFixed(0) + '%' : '—'}</td></tr>`
+      `<tr><td>${escapeHtml(a.aluno_nome || '—')}</td><td style="text-align:center">${a.presencas ?? 0}</td><td style="text-align:center">${a.faltas ?? 0}</td><td style="text-align:center">${a.total ?? 0}</td><td style="text-align:center">${a.total > 0 ? ((Number(a.presencas) / Number(a.total)) * 100).toFixed(0) + '%' : '—'}</td></tr>`
     ).join('');
-    const html = `<!DOCTYPE html><html><head><title>Frequência — ${turma}</title>
+    const html = `<!DOCTYPE html><html><head><title>Frequência — ${escapeHtml(turma)}</title>
     <style>body{font-family:Arial,sans-serif;font-size:12px;padding:24px}h2{margin-bottom:4px}p{color:#666;font-size:11px;margin-bottom:16px}
     table{width:100%;border-collapse:collapse}th,td{border:1px solid #ccc;padding:6px 10px;text-align:left}th{background:#f0f0f0;font-weight:700;font-size:11px;text-transform:uppercase}</style></head>
-    <body><h2>Frequência — ${turma}</h2><p>Período: ${dataIni} a ${dataFim} · Gerado em ${new Date().toLocaleString('pt-BR')}</p>
+    <body><h2>Frequência — ${escapeHtml(turma)}</h2><p>Período: ${escapeHtml(dataIni)} a ${escapeHtml(dataFim)} · Gerado em ${new Date().toLocaleString('pt-BR')}</p>
     <table><thead><tr><th>Aluno</th><th style="text-align:center">Presenças</th><th style="text-align:center">Faltas</th><th style="text-align:center">Total</th><th style="text-align:center">%</th></tr></thead>
     <tbody>${linhas}</tbody></table></body></html>`;
     const win = window.open('', '_blank');

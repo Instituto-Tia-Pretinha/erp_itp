@@ -1,6 +1,7 @@
 'use client';
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import api from '@/services/api';
+import { escapeHtml } from '@/lib/utils';
 import {
   Package, PackagePlus, PackageMinus, AlertTriangle, RefreshCw,
   Plus, Search, Edit2, Trash2, X, CheckCircle2, History,
@@ -818,8 +819,8 @@ function CotacaoTab({ produtos, simulacao, setSimulacao, buscaCotacao, setBuscaC
       const qty = Number(simulacao[p.id] || 0);
       const custo = p.valor_compra != null && qty > 0 ? (qty * Number(p.valor_compra)).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '—';
       return `<tr>
-        <td>${p.nome}</td><td>${p.categoria}</td>
-        <td>${fmt(p.quantidade_atual)} ${p.unidade_medida}</td>
+        <td>${escapeHtml(p.nome)}</td><td>${escapeHtml(p.categoria)}</td>
+        <td>${fmt(p.quantidade_atual)} ${escapeHtml(p.unidade_medida)}</td>
         <td>${p.valor_compra != null ? Number(p.valor_compra).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '—'}</td>
         <td>${qty > 0 ? fmt(qty) : '—'}</td>
         <td>${custo}</td>
