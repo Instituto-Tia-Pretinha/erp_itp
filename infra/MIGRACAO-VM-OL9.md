@@ -98,6 +98,14 @@ Obrigatório com ITP e APRXM na mesma VM (ver `AVALIACAO-SEPARACAO-ITP-APRXM.md`
 4. Cronometrar a cópia dos volumes para estimar a janela.
 5. Derrubar a stack na nova e apagar os dados de teste.
 
+> **Ensaio feito em 23/10/2026.** As 16 stacks subiram; todos os domínios responderam igual à produção, com certificado válido (`curl --resolve` pelo IP privado). Contagens do Postgres idênticas. Tempos: `pg_dumpall`/restore 6 s; volumes `clickhouse` 3 s, `traefik` 1 s, `grafana` 19 s, `prometheus` 114 s; imagens construídas (6,8 GB) 6 min.
+>
+> Achados do ensaio, para a virada:
+> - Imagens `:latest` baixadas na VM nova vieram mais novas que as da produção (grafana, prometheus, blackbox, renderer, postgres 17). Já foram substituídas pelas exatas da antiga (`docker save | docker load`). Na virada, repetir só para imagens reconstruídas depois de 23/10.
+> - `aprxm-etl` grava parquet no bucket S3/R2 e `aprxm-clickhouse-backup` envia o zip ao SharePoint: não rodar nenhum dos dois na VM nova antes da virada. (No ensaio o backup subiu `aprxm_ch_20261023_180848.zip` com dados idênticos aos da produção.)
+> - O Grafana chama um webhook do ERP nos alertas: no ensaio subiu com `GF_UNIFIED_ALERTING_ENABLED=false`.
+> - Certificados vencem a partir de 07/12/2026: virada antes de ~07/11 evita renovação em cima da troca de IP.
+
 ### Fase 3 — Virada (janela à noite, ~30–45 min fora do ar)
 1. Avisar usuários. Na antiga: comentar o crontab (inclui o deploy automático e o heartbeat — **pausar o healthchecks.io** antes, para não alarmar) e parar `tarefas-api` e o runner.
 2. `docker compose stop` na antiga.
