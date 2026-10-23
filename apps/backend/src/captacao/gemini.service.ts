@@ -638,16 +638,17 @@ export class GeminiService {
   /** Sanitiza campo de texto livre vindo da LLM ou do usuário */
   private sanitizeText(value: unknown, maxLen: number): string | undefined {
     if (value == null) return undefined;
-    // Sem < e > nao sobra tag; esquemas e handlers sao removidos ate estabilizar,
-    // senao "javajavascript:script:" vira "javascript:" numa passada so.
+    // Tag vira espaco (removida "a seco", "<scr<script>ipt>" remontaria a tag); esquemas e
+    // handlers sao removidos ate estabilizar, senao "javajavascript:script:" vira "javascript:".
     let s = String(value);
     let anterior: string;
     do {
       anterior = s;
-      s = s.replace(/<[^>]*>/g, '').replace(/(?:java|vb)script:|data:/gi, '').replace(/on\w+\s*=/gi, '');
+      s = s.replace(/<[^>]*>/g, ' ').replace(/(?:java|vb)script:|data:/gi, '').replace(/on\w+\s*=/gi, '');
     } while (s !== anterior);
     s = s
       .replace(/[<>]/g, '')
+      .replace(/\s{2,}/g, ' ')
       .replace(/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/g, '') // control chars
       .slice(0, maxLen)
       .trim();
