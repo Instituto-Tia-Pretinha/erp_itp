@@ -54,7 +54,7 @@ services:
       - "127.0.0.1:5432:5432"
 
   aprxm_clickhouse:
-    image: clickhouse/clickhouse-server:24.10-alpine
+    image: clickhouse/clickhouse-server:26.3-alpine
     container_name: aprxm_clickhouse
     restart: unless-stopped
     environment:
