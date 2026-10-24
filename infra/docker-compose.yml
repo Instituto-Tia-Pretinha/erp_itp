@@ -137,10 +137,43 @@ services:
       - aprxm_backend
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.aprxm-presidencia.rule=Host(`aprxm.institutotiapretinha.org`)"
+      - "traefik.http.routers.aprxm-presidencia.rule=Host(`prt-aprxm.institutotiapretinha.org`)"
       - "traefik.http.routers.aprxm-presidencia.entrypoints=websecure"
       - "traefik.http.routers.aprxm-presidencia.tls.certresolver=leresolver"
       - "traefik.http.services.aprxm-presidencia.loadbalancer.server.port=80"
+
+  # App do APROXIMA (saiu da Vercel em 10/2026: Hobby nao publica repo privado de organizacao).
+  aprxm_frontend:
+    build:
+      context: /home/itpadmin/aprxm_sys/frontend
+      target: production
+    container_name: aprxm_frontend
+    restart: unless-stopped
+    mem_limit: 128m
+    depends_on:
+      - aprxm_backend
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.aprxm-frontend.rule=Host(`aprxm.institutotiapretinha.org`)"
+      - "traefik.http.routers.aprxm-frontend.entrypoints=websecure"
+      - "traefik.http.routers.aprxm-frontend.tls.certresolver=leresolver"
+      - "traefik.http.services.aprxm-frontend.loadbalancer.server.port=80"
+
+  # Painel administrativo do APROXIMA (antes painel-aprxm.vercel.app).
+  aprxm_painel:
+    build:
+      context: /home/itpadmin/aprxm_sys/painel
+    container_name: aprxm_painel
+    restart: unless-stopped
+    mem_limit: 128m
+    depends_on:
+      - aprxm_backend
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.aprxm-painel.rule=Host(`adm-aprxm.institutotiapretinha.org`)"
+      - "traefik.http.routers.aprxm-painel.entrypoints=websecure"
+      - "traefik.http.routers.aprxm-painel.tls.certresolver=leresolver"
+      - "traefik.http.services.aprxm-painel.loadbalancer.server.port=80"
 
   aprxm_backend:
     build:
