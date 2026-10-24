@@ -41,7 +41,7 @@ AUTOR = ("JiraIA", "erickcardoso@institutotiapretinha.org")
 
 # Sistema do ticket -> (repositório local, repositório no GitHub).
 REPOS = {
-    "APRXM": (os.path.expanduser("~/aprxm_sys"), "erickcardosoitp/aprxm_sys"),
+    "APRXM": (os.path.expanduser("~/aprxm_sys"), "Instituto-Tia-Pretinha/aprxm_sys"),
     "ERP-ITP": (os.path.expanduser("~/erp_itp"), "Instituto-Tia-Pretinha/erp_itp"),
 }
 # Correção automática nunca toca nesses caminhos (schema, segredos, deploy, CI).
