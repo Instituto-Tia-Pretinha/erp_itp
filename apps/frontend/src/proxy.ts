@@ -50,7 +50,7 @@ function isTokenValid(token: string): boolean {
   }
 }
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const token = request.cookies.get('itp_token')?.value;
   const hasValidToken = !!token && isTokenValid(token);
   const { pathname } = request.nextUrl;

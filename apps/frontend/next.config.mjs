@@ -2,7 +2,6 @@
 // build: 2026-04-26
 const nextConfig = {
   transpilePackages: [],
-  eslint: { ignoreDuringBuilds: true },
   typescript: { ignoreBuildErrors: false },
 
   async redirects() {
