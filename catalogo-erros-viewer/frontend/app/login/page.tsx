@@ -1,4 +1,5 @@
-export default function LoginPage({ searchParams }: { searchParams: { erro?: string } }) {
+export default async function LoginPage({ searchParams }: { searchParams: Promise<{ erro?: string }> }) {
+  const { erro } = await searchParams
   return (
     <main style={{
       height: "100vh", display: "flex", flexDirection: "column",
@@ -10,9 +11,9 @@ export default function LoginPage({ searchParams }: { searchParams: { erro?: str
       <p style={{ color: "#5b6068", fontSize: 13, margin: 0 }}>
         Console operacional da equipe de TI do Instituto Tia Pretinha.
       </p>
-      {searchParams.erro && (
+      {erro && (
         <p style={{ color: "#8f1620", fontSize: 12.5 }}>
-          Falha no login ({searchParams.erro}). Tente de novo.
+          Falha no login ({erro}). Tente de novo.
         </p>
       )}
       <a
