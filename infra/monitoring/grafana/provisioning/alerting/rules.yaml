@@ -271,6 +271,70 @@ groups:
                   reducer: { type: last, params: [] }
               refId: C
 
+      - uid: itp-alerta-tarefa-atrasada
+        title: Tarefa agendada sem rodar no prazo
+        condition: C
+        for: 5m
+        no_data_state: OK
+        exec_err_state: Alerting
+        labels:
+          severity: warning
+        annotations:
+          summary: "O QUE ACONTECEU:\nA tarefa {{ $labels.tarefa }} passou do prazo sem nenhuma execucao (diaria: 26h; a cada 6h: 7h; investigador/sync: 2h; semanal: 8 dias; mensal: 32 dias).\n\nCAUSA PROVAVEL:\nLinha do crontab removida ou alterada, ou o runner nao chega a rodar.\n\nO QUE FAZER:\n1. crontab -l | grep {{ $labels.tarefa }}\n2. Conferir ~/itp-stack/tarefas-timing/{{ $labels.tarefa }}.jsonl\n3. Rodar na mao: /opt/itp-stack/tarefas-venv/bin/python3 /opt/itp-stack/tarefas_runner.py {{ $labels.tarefa }}"
+        data:
+          - refId: A
+            datasourceUid: prometheus_itp
+            relativeTimeRange: { from: 300, to: 0 }
+            model:
+              editorMode: code
+              expr: '(time() - tarefa_ultima_execucao_timestamp_seconds{tarefa=~"catalogo-erros-consolidacao-diaria|aprxm-etl|aprxm-mensalidade-overdue|aprxm-crm-scoring|aprxm-demands-reminders|aprxm-blob-backup-to-sharepoint|vm-snapshot|log-daily-zip|verificar-senhas|supabase-health-check|captacao-cron-expire"}) / 93600 or (time() - tarefa_ultima_execucao_timestamp_seconds{tarefa=~"pg-sync-to-neon|aprxm-backup-to-neon|aprxm-clickhouse-backup"}) / 25200 or (time() - tarefa_ultima_execucao_timestamp_seconds{tarefa=~"jiraia-investigador|sync-catalogo-erros-clickhouse"}) / 7200 or (time() - tarefa_ultima_execucao_timestamp_seconds{tarefa=~"aprxm-vacuum|relatorio-grafana"}) / 691200 or (time() - tarefa_ultima_execucao_timestamp_seconds{tarefa="aprxm-mensalidade-generate"}) / 2764800'
+              instant: true
+              range: false
+              refId: A
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator: { type: gt, params: [1] }
+                  operator: { type: and }
+                  query: { params: [C] }
+                  reducer: { type: last, params: [] }
+              refId: C
+
+      - uid: itp-alerta-tarefa-falhou
+        title: Tarefa agendada terminou com erro
+        condition: C
+        for: 5m
+        no_data_state: OK
+        exec_err_state: Alerting
+        labels:
+          severity: warning
+        annotations:
+          summary: "O QUE ACONTECEU:\nA ultima execucao da tarefa {{ $labels.tarefa }} terminou com exit code diferente de 0.\n\nO QUE FAZER:\n1. Ver o log da tarefa (log_path em ~/itp-stack/tarefas-registro.json)\n2. Conferir ~/itp-stack/tarefas-timing/{{ $labels.tarefa }}.jsonl\n3. Corrigir e rodar de novo pelo runner"
+        data:
+          - refId: A
+            datasourceUid: prometheus_itp
+            relativeTimeRange: { from: 300, to: 0 }
+            model:
+              editorMode: code
+              expr: 'tarefa_ultimo_exit_code{tarefa!~"catalogo-erros-aplicador|aprxm-sync-pix|aprxm-daily-tasks-reminders"}'
+              instant: true
+              range: false
+              refId: A
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator: { type: gt, params: [0] }
+                  operator: { type: and }
+                  query: { params: [C] }
+                  reducer: { type: last, params: [] }
+              refId: C
+
 # Exclusão real de regra provisionada por arquivo (decisão 2026-09-15):
 # só tirar do bloco "groups" acima NÃO apaga a regra -- Grafana 13.2.1
 # mantém servindo a versão antiga do banco interno mesmo depois de
