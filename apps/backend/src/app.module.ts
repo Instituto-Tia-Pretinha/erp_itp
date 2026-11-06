@@ -93,6 +93,8 @@ import { MetricsModule } from './metrics/metrics.module';
         return {
           type: 'postgres',
           url: dbUrlWithTimeout,
+          // Aparece como app= no log do Postgres: identifica a origem do erro no catálogo.
+          applicationName: 'erp-itp-backend',
           entities: [Usuario, Aluno, Inscricao, InscricaoAnotacao, InscricaoMovimentacao, Grupo, DocumentoInscricao],
           autoLoadEntities: true,
           synchronize: false,

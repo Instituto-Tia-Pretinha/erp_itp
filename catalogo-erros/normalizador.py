@@ -39,12 +39,15 @@ _ANSI = re.compile(r"\x1b\[[0-?]*[ -/]*[@-~]")
 # conteudo semantico de uma mensagem de erro, entao remover nao corre risco
 # de fundir erros diferentes (principio do docstring acima).
 _CONTROLE = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
+# Marcador do log_line_prefix do Postgres (db=%d app=%a|): origem, não faz parte do erro.
+_MARCADOR_PG = re.compile(r" (?:db=\S* )?app=[^|]*\| ")
 
 
 def normalizar(mensagem: str) -> str:
     """Aplica as substituições na ordem certa (timestamp/uuid antes de
     número solto, senão o regex de número já teria comido os dígitos)."""
     m = mensagem.strip()
+    m = _MARCADOR_PG.sub(" ", m)
     m = _ANSI.sub("", m)
     m = _CONTROLE.sub("", m)
     m = _TIMESTAMP.sub("<timestamp>", m)
