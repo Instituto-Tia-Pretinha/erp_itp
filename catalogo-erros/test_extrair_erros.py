@@ -5,6 +5,7 @@ Rodar: python3 -m unittest test_extrair_erros.py -v
 import unittest
 
 from coletor import extrair_erros
+from normalizador import normalizar
 
 APP = '2026-09-29 02:19:59.928 UTC [253412] app=| ERROR:  column "x" does not exist'
 MANUAL = '2026-09-29 02:19:59.928 UTC [253412] app=psql| ERROR:  column r.phone does not exist'
@@ -17,7 +18,14 @@ class TestExtrairErros(unittest.TestCase):
         self.assertEqual(extrair_erros(MANUAL + "\n" + PGADMIN), [])
 
     def test_erro_do_sistema_fica_com_a_mesma_assinatura_de_antes(self):
-        self.assertEqual(extrair_erros(APP), [ANTIGO])
+        self.assertEqual([normalizar(l) for l in extrair_erros(APP)], [normalizar(ANTIGO)])
+
+    def test_marcador_com_banco_mantem_origem_e_assinatura(self):
+        linha = '2026-11-06 02:19:59.928 UTC [253412] db=aprxm_db app=aprxm-backend| ERROR:  column "x" does not exist'
+        self.assertEqual(extrair_erros(linha), [linha])
+        self.assertEqual(normalizar(linha), normalizar(ANTIGO))
+        manual = '2026-11-06 02:19:59.928 UTC [253412] db=aprxm_db app=psql| ERROR:  syntax error'
+        self.assertEqual(extrair_erros(manual), [])
 
     def test_log_sem_marcador_nao_muda(self):
         self.assertEqual(extrair_erros(ANTIGO), [ANTIGO])

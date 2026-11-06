@@ -221,7 +221,7 @@ def logs_do_container(nome: str, desde_iso: str) -> str:
 # itp_postgres loga com log_line_prefix '%m [%p] app=%a| ' (ALTER SYSTEM na VM). Sessão manual (psql,
 # pgAdmin, DBeaver) é consulta de diagnóstico, não erro do sistema -- três delas reabriram o PRB-0021
 # em 28/09. O marcador sai da linha pra assinatura continuar igual à dos erros já catalogados.
-_APP_POSTGRES = re.compile(r" app=([^|]*)\| ")
+_APP_POSTGRES = re.compile(r" (?:db=(\S*) )?app=([^|]*)\| ")
 _APPS_MANUAIS = ("psql", "pgAdmin", "DBeaver")
 
 
@@ -249,10 +249,10 @@ def extrair_erros(texto_log: str) -> list[str]:
             if _ERRO_4XX_NEGOCIO.search(l):
                 continue
         m = _APP_POSTGRES.search(l)
-        if m:
-            if m.group(1).startswith(_APPS_MANUAIS):
-                continue
-            l = l[:m.start()] + " " + l[m.end():]
+        # O marcador db=/app= fica na linha (MensagemExemplo mostra a origem); a assinatura
+        # ignora o marcador em normalizador.normalizar, então continua igual à de antes.
+        if m and m.group(2).startswith(_APPS_MANUAIS):
+            continue
         if (normalizador.contem_erro(l, config.PADRAO_ERRO)
                 and not normalizador.eh_access_log_ok(l)
                 and not normalizador.eh_nivel_nao_erro(l)):
