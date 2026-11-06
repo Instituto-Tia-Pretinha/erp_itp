@@ -312,6 +312,9 @@ services:
     environment:
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
       GF_USERS_ALLOW_SIGN_UP: "false"
+      # WAL no SQLite do Grafana: com o disco saturado (builds na VM) o banco travava
+      # ("database is locked") e cada regra de alerta virava incidente no catalogo (PRB-0071, 30/10).
+      GF_DATABASE_WAL: "true"
       GF_SERVER_ROOT_URL: https://grafana.itp.institutotiapretinha.org
       # SSO Microsoft — reaproveita o mesmo app registration do erp_itp
       # (credenciais copiadas pro .env do itp-stack). Redirect URI a
