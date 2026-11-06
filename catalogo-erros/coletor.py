@@ -215,9 +215,29 @@ _APP_POSTGRES = re.compile(r" app=([^|]*)\| ")
 _APPS_MANUAIS = ("psql", "pgAdmin", "DBeaver")
 
 
+# Traceback do Python sai em várias linhas; lidas uma a uma, cada frame ('File ".../starlette/..."'),
+# linha de código ('raise UnprocessableError(...)') e separador de cadeia virava um incidente
+# (PRB-0040..0052, PRB-0034, PRB-0060). Do traceback só fica a última linha (tipo: mensagem).
+_TB_INICIO = re.compile(r"^\s*Traceback \(most recent call last\):")
+_TB_FRAME = re.compile(r'^\s+File "')
+_TB_SEPARADOR = re.compile(r"^\s*(The above exception was the direct cause|During handling of the above exception)")
+# Erro 4xx de regra de negócio (aviso que o usuário já recebe na tela) não é falha do sistema.
+_ERRO_4XX_NEGOCIO = re.compile(r"(UnprocessableError|ConflictError|NotFoundError|ForbiddenError|HTTPException): 4\d\d\b")
+
+
 def extrair_erros(texto_log: str) -> list[str]:
     erros = []
+    em_traceback = False
     for l in texto_log.splitlines():
+        if _TB_INICIO.match(l) or _TB_SEPARADOR.match(l):
+            em_traceback = True
+            continue
+        if em_traceback:
+            if _TB_FRAME.match(l) or not l.strip() or l[:1].isspace():
+                continue
+            em_traceback = False
+            if _ERRO_4XX_NEGOCIO.search(l):
+                continue
         m = _APP_POSTGRES.search(l)
         if m:
             if m.group(1).startswith(_APPS_MANUAIS):

@@ -64,8 +64,11 @@ def contem_erro(linha: str, padrao) -> bool:
 # asset estático (ex: /_next/static/chunks/app/error-<hash>.js), sem relação
 # com falha — o request teve status 2xx/3xx. Isso não é log de app, é acesso
 # ok, então nunca deveria ter caído no PADRAO_ERRO em primeiro lugar.
+# 4xx também: robô pedindo /owa/auth/errorFE.aspx (PRB-0070) ou aba antiga pedindo
+# /static/chunks/app/error-<hash>.js depois de deploy (PRB-0032/0033) recebem 404 e não são
+# falha do sistema. Só 5xx no access log conta como erro.
 _ACCESS_LOG_OK = re.compile(
-    r'"\s*(GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)\s+\S+\s+HTTP/[\d.]+"\s+([23]\d{2})\b'
+    r'"\s*(GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)\s+\S+\s+HTTP/[\d.]+"\s+([234]\d{2})\b'
 )
 
 

@@ -83,6 +83,10 @@ main() {
     if (cd "$STACK" && docker compose build "${SERVICOS[@]}" && docker compose up -d "${SERVICOS[@]}") && saudavel; then
         rm -f "$MARCA_FALHA"
         log "deploy ok"
+        # O Grafana só lê regras/provisionamento ao subir; o diretório é link para este repositório.
+        if git diff --name-only "$atual" "$novo" -- infra/monitoring/grafana | grep -q .; then
+            docker restart itp_grafana >/dev/null && log "grafana reiniciado (infra/monitoring/grafana mudou)"
+        fi
         avisar "[erp_itp] Deploy feito: ${novo:0:8}" "Commits publicados:
 $resumo
 
