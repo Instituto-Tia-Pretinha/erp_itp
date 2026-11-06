@@ -57,6 +57,12 @@ class TestExtrairErros(unittest.TestCase):
         texto = "Traceback (most recent call last):\n  File \"a.py\", line 1, in f\n    x()\nValueError: ruim\n" + ANTIGO
         self.assertEqual(extrair_erros(texto), ["ValueError: ruim", ANTIGO])
 
+    def test_access_log_4xx_nao_e_erro_e_5xx_e(self):
+        owa = '1.2.3.4 - - [29/Oct/2026:10:00:00 +0000] "GET /owa/auth/errorFE.aspx?httpCode=500 HTTP/1.1" 404 19 "-" "-"'
+        chunk = '1.2.3.4 - - [11/Oct/2026:10:00:00 +0000] "GET /static/chunks/app/error-0d2f.js HTTP/1.1" 404 0 "-" "-"'
+        falha = '1.2.3.4 - - [11/Oct/2026:10:00:00 +0000] "POST /api/error-report HTTP/1.1" 502 0 "-" "-"'
+        self.assertEqual(extrair_erros("\n".join([owa, chunk, falha])), [falha])
+
 
 if __name__ == "__main__":
     unittest.main()
