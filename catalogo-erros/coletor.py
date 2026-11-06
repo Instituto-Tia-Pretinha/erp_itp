@@ -132,10 +132,20 @@ def _registrar_no_ticket(cod: str | None, ocorrencias: int, ultimo_timestamp: da
                  cod, t.get("Sistema") or "", "", f"{ocorrencias} ocorrência(s) nova(s) em {ultimo_timestamp.isoformat()}")
 
 
+# Um alerta por ticket por rodada: uma falha só (ex.: SQLite do Grafana travado, 05/11) solta
+# várias linhas de log diferentes ligadas ao mesmo ticket, e cada uma mandava um e-mail.
+_ALERTADOS_NA_RODADA: set = set()
+
+
 def _alertar(motivo: str, criticidade: str, titulo: str, cod: str | None, aplicacao: str, mensagem: str, detalhe: str) -> None:
     """Aviso imediato por e-mail; falha de envio não derruba a rodada."""
+    if cod and cod in _ALERTADOS_NA_RODADA:
+        log(f"  alerta imediato já enviado nesta rodada ({cod}), não repete")
+        return
     try:
         notificador.alertar(motivo, criticidade, titulo, cod, aplicacao, mensagem, detalhe)
+        if cod:
+            _ALERTADOS_NA_RODADA.add(cod)
         log(f"  alerta imediato enviado ({criticidade}, {cod})")
     except Exception as exc:
         log(f"  aviso: falha ao enviar alerta imediato ({cod}): {exc}")
