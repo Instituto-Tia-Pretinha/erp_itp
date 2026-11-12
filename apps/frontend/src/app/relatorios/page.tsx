@@ -1273,7 +1273,8 @@ function AbaDRE() {
     if (!dreRef.current) return;
     setExportando(formato);
     try {
-      const html2canvas = (await import('html2canvas')).default;
+      const html2canvasMod = await import('html2canvas');
+      const html2canvas = (html2canvasMod.default ?? html2canvasMod) as unknown as typeof html2canvasMod.default;
       const canvas = await html2canvas(dreRef.current, { scale: 2, backgroundColor: '#ffffff', useCORS: true });
       if (formato === 'png') {
         const link = document.createElement('a');
