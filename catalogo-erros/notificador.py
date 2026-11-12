@@ -8,6 +8,7 @@ from __future__ import annotations  # PEP 604 (X | None) — VM roda Python 3.9
 
 import html
 import os
+import time
 
 import requests
 
@@ -15,6 +16,24 @@ DESTINATARIO = "erickcardoso@institutotiapretinha.org"
 REMETENTE = "projetos@institutotiapretinha.org"
 ENV_EMAIL = os.path.expanduser("~/itp-stack/relatorio_grafana.env")
 URL_LISTA = "https://insttiapretinha.sharepoint.com/sites/ObservabilidadeITP/Lists/TicketsProblema"
+
+# PRB-0086: 502 do Graph (gateway instável do lado da Microsoft, sem relação
+# com credencial) derrubou a consolidação diária inteira por falha só no
+# envio do e-mail-resumo -- os itens já tinham sido criados na lista antes
+# disso. Retry curto só para status transitório (não para 4xx de credencial,
+# que já tem causa raiz conhecida e não se resolve tentando de novo).
+_STATUS_TRANSITORIOS = {429, 500, 502, 503, 504}
+_TENTATIVAS = 3
+_ESPERA_BASE_S = 2
+
+
+def _post_com_retry(url: str, **kwargs) -> requests.Response:
+    for tentativa in range(1, _TENTATIVAS + 1):
+        resp = requests.post(url, **kwargs)
+        if resp.status_code not in _STATUS_TRANSITORIOS or tentativa == _TENTATIVAS:
+            return resp
+        time.sleep(_ESPERA_BASE_S * tentativa)
+    return resp
 
 
 def _cfg_email() -> dict:
@@ -30,7 +49,7 @@ def _cfg_email() -> dict:
 
 def enviar_email(assunto: str, corpo_html: str, destinatario: str = DESTINATARIO) -> None:
     cfg = _cfg_email()
-    token_resp = requests.post(
+    token_resp = _post_com_retry(
         f"https://login.microsoftonline.com/{cfg['MS_TENANT_ID']}/oauth2/v2.0/token",
         data={
             "client_id": cfg["MS_CLIENT_ID"],
@@ -41,7 +60,7 @@ def enviar_email(assunto: str, corpo_html: str, destinatario: str = DESTINATARIO
         timeout=30,
     )
     token_resp.raise_for_status()
-    resp = requests.post(
+    resp = _post_com_retry(
         f"https://graph.microsoft.com/v1.0/users/{REMETENTE}/sendMail",
         headers={"Authorization": f"Bearer {token_resp.json()['access_token']}", "Content-Type": "application/json"},
         json={
