@@ -64,27 +64,41 @@ class GraphMailTransport {
     return list.map((a) => this.parseAddr(a)).filter((a): a is string => !!a);
   }
 
+  // Status HTTP transitorios do lado do Graph/Microsoft 365 (gateway/throttling) —
+  // vistos ocasionalmente como 502 "UnknownError" sem mensagem. Vale uma nova tentativa.
+  private static readonly STATUS_TRANSITORIOS = [429, 502, 503, 504];
+
   // Assinatura exigida pelo nodemailer pra um transport customizado.
   async send(mail: any, callback: (err: Error | null, info?: any) => void) {
     try {
       const data = mail.data;
-      const token = await this.getToken();
       const message = {
         subject: data.subject,
         body: { contentType: data.html ? 'HTML' : 'Text', content: data.html || data.text || '' },
         toRecipients: this.parseAddrList(data.to).map((address) => ({ emailAddress: { address } })),
         replyTo: this.parseAddrList(data.replyTo).map((address) => ({ emailAddress: { address } })),
       };
-      const resp = await fetch(`https://graph.microsoft.com/v1.0/users/${this.mailbox}/sendMail`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message, saveToSentItems: true }),
-      });
-      if (!resp.ok) {
+
+      const maxTentativas = 2;
+      let ultimoErro: Error = new Error('Graph sendMail: nenhuma tentativa executada');
+      for (let tentativa = 1; tentativa <= maxTentativas; tentativa++) {
+        const token = await this.getToken();
+        const resp = await fetch(`https://graph.microsoft.com/v1.0/users/${this.mailbox}/sendMail`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message, saveToSentItems: true }),
+        });
+        if (resp.ok) {
+          callback(null, { envelope: mail.data.envelope, messageId: `graph-${Date.now()}` });
+          return;
+        }
         const errBody = await resp.text();
-        throw new Error(`Graph sendMail falhou: ${resp.status} ${errBody}`);
+        ultimoErro = new Error(`Graph sendMail falhou: ${resp.status} ${errBody}`);
+        const transitorio = GraphMailTransport.STATUS_TRANSITORIOS.includes(resp.status);
+        if (!transitorio || tentativa === maxTentativas) break;
+        await new Promise((r) => setTimeout(r, 1000 * tentativa));
       }
-      callback(null, { envelope: mail.data.envelope, messageId: `graph-${Date.now()}` });
+      throw ultimoErro;
     } catch (err: any) {
       callback(err);
     }
