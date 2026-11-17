@@ -33,6 +33,20 @@ export const setupApp = async (app: NestExpressApplication) => {
   // ✅ Forma correta de usar o middleware em ambientes híbridos
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+  // body-parser só sabe descomprimir gzip/deflate — qualquer outro
+  // Content-Encoding (ex: "br", enviado por bots/scanners, nunca pelo
+  // próprio frontend) vira um erro cru (não é HttpException do Nest) que
+  // cai no ExceptionsHandler genérico como 500 não tratado, virando ruído
+  // de log ERROR pra uma requisição malformada do cliente. Responde 415
+  // direto aqui, antes de chegar no handler genérico.
+  app.use((err: any, _req: express.Request, res: express.Response, next: express.NextFunction) => {
+    if (err?.status === 415 && err?.type?.startsWith?.('encoding.')) {
+      return res.status(415).json({ statusCode: 415, message: err.message });
+    }
+    next(err);
+  });
+
   const cookieMiddleware = (cookieParser as any).default || cookieParser;
   app.use(cookieMiddleware());
   
